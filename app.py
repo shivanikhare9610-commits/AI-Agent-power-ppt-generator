@@ -69,7 +69,7 @@ def generate_image(img_prompt):
     f.write(content)
 
   from PIL import Image
-  return Image.open("Image.jpeg")
+  return url
 
 
 
@@ -161,7 +161,7 @@ if all(ALL_API) and user_query:
                           data=code,
                           file_name="ppt.html",
                           mime="text/html"):
-                            st.success("PPT DOWNLOADED SUCCESSFULLY!!")
+          st.success("PPT DOWNLOADED SUCCESSFULLY!!")
       
           
                     
