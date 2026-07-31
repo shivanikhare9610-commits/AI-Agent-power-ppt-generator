@@ -15,34 +15,38 @@ import streamlit as st
 
 
 #====================API-keys======================
-GOOGLE_KEY=st.sidebar.text_input("Google -API",type="password")
-GROQ_KEY=st.sidebar.text_input("Groq-API",type="password")
-TAVILY_KEY=st.sidebar.text_input("Tavily -API",type="password")
+GOOGLE_API_KEY=st.sidebar.text_input("Google -API",type="password")
+GROQ_API_KEY=st.sidebar.text_input("Groq-API",type="password")
+TAVILY_API_KEY=st.sidebar.text_input("Tavily -API",type="password")
 
 
-os.environ["GOOGLE_API_KEY"]=GOOGLE_KEY
-os.environ["GROQ_API_KEY"]=GROQ_KEY
-os.environ["TAVILY_API_KEY"]=TAVILY_KEY
+os.environ["GOOGLE_API_KEY"]=GOOGLE_API_KEY
+os.environ["GROQ_API_KEY"]=GROQ_API_KEY
+os.environ["TAVILY_API_KEY"]=TAVILY_API_KEY
 
 
-ALL_API=[GOOGLE_KEY,GROQ_KEY,TAVILY_KEY]
+ALL_API=[GOOGLE_API_KEY,GROQ_API_KEY,TAVILY_API_KEY]
 if not all(ALL_API):
   st.sidebar.error("PASS API-KEYS")
   
-elif any(ALL_API):
-  st.sidebar.info("Must pass all API KEYS")
-
-
-else:
-  st.sidebar.success("API KEYS LOADED SUCCESSFULLY")
+elif all(ALL_API):
   model=ChatGoogleGenerativeAI(model="gemini-3.5-flash-lite",
-                              google_api_key=GOOGLE_API_KEY 
-                              )
+                              google_api_key=GOOGLE_API_KEY) 
+  st.sidebar.success("API KEYS LOADED SUCCESSFULLY")                           )
+  
+elif any(ALL_API):
+  st.sidebar.info("api keys loaded successfully")
+  
+else:
+  st.info("LOADED")
+   
+  
+  
 
 #===================frontend===================
 st.title("AI AGENT-POWERED PPT GENERATOR")
 
-USER_QUERY=ST.TEXT_AREA("Write your PPT topic or prompt:")
+user_query=st.text_area("Write your PPT topic or prompt:")
 
 #==========================ASSESTS======================
 
@@ -103,61 +107,63 @@ def prompt_generator(model,query):
     file.write(final_prompt)
   return final_prompt
 
+if all(ALL_API) and user_query:
+  agent=create_agent(
+      model=model,
+      tools=[search_latest_info,
+              generate_image
+             ]
+  )
+  
+  
+  
+  #====================DISPLAY AGENT===============
+  # st.sidebar.image(agent)
 
-agent=create_agent(
-    model=model,
-    tools=[search_latest_info,
-            generate_image
-           ]
-)
 
+  # ================with TABS===============
+  with tab1:
+    st.header("GENERATE IMAGE GIVE PROMPT")
+    if st.button("click to generate:",key="generate_img_button"):
+      with st.spinner("Running agent........."):
+        data = f"https://image.pollinations.ai/{user_query}"
+        time.sleep(3)
+        st.image(data)
+        
 
+  with tab2:
+    st.header("CHECK LATEST NEWS")
+    if st.button("Fetch news:",key="news_button"):
+      with st.spinner("Running agent........."):
+        prompt=""" give latest news india or world news
+        related to tech ,bussiness jobs,or user requested output
+        in proper HTML news templates"""+ user_query
+        response=agent.invoke({"messages":[{"role":"user",
+                                    "content": final_prompt}]})
+        code=response["messages"][-1].content[-1]["text"]
 
-#====================DISPLAY AGENT===============
-st.sidebar.image(agent)
+        st.html(code,width="stretch",
+                unsafe_allow_javascript=True)
+  
+  with tab3:
+    st.header("CREATE PPT")
+    if st.button("click to generate:",key="generate_ppt_button"):
+      with st.spinner("Running agent........."):
+        final_prompt=prompt_generator(model,user_query)
+        response=agent.invoke({"messages":[{"role":"user",
+                                    "content": final_prompt}]})
+        code=response["messages"][-1].content[-1]["text"]
 
-
-# ================with TABS===============
-with tab1:
-  st.header("GENERATE IMAGE GIVE PROMPT")
-  if st.button("click to generate:"):
-    with st.sopinner("Running agent........."):
-      data=generate_image(user_query)
-      st.image(data)
-      st.image("Image.jpeg")
-
-with tab2:
-  st.header("CHECK LATEST NEWS")
-  if st.button("Fetch news:"):
-    with st.spinner("Running agent........."):
-      prompt=""" give latest news india or world news
-      related to tech ,bussiness jobs,or user requested output
-      in proper HTML news templates"""+ user_query
-      response=agent.invoke({"messages":[{"role":"user",
-                                  "content": final_prompt}]})
-      code=response["messages"][-1].content[-1]["text"]
-
-      st.html(code,width="stretch",
-              unsafe_allow_javascript=True)
-
-with tab3:
-  st.header("CREATE PPT")
-  if st.button("click to generate:"):
-    with st.spinner("Running agent........."):
-      final_prompt=prompt_generator(model,user_query)
-      response=agent.invoke({"messages":[{"role":"user",
-                                  "content": final_prompt}]})
-      code=response["messages"][-1].content[-1]["text"]
-
-      st.html(code,width="stretch",
-              unsafe_allow_javascript=True)
-      st.download_button(
-                        label="DOWNLOAD PPT",
-                        data=code,
-                        file_name="ppt.html",
-                        mime="text/html"
-                        )
-      st.success("PPT DOWNLOADED SUCCESSFULLY!!")
+        st.html(code,width="stretch",
+                unsafe_allow_javascript=True)
+        if st.download_button(
+                          label="DOWNLOAD PPT",
+                          data=code,
+                          file_name="ppt.html",
+                          mime="text/html"):
+                            st.success("PPT DOWNLOADED SUCCESSFULLY!!")
+      
+          
                     
 
       
